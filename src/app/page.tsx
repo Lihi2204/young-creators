@@ -287,6 +287,18 @@ export default function YoungCreators() {
     };
   }, []);
 
+  // Initialize audio element on first user interaction (for mobile)
+  const initAudioForMobile = useCallback(() => {
+    if (!audioRef.current) {
+      const audio = new Audio();
+      audio.volume = 1;
+      // Play silent audio to unlock audio context on mobile
+      audio.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjU0AAAAAAAAAAAAAAAAJAAAAAAAAAABhgTTKKoAAAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjU0AAAAAAAAAAAAAAAAJAAAAAAAAAABhgTTKKoAAAAAAAAAAAAAAAAA';
+      audio.play().catch(() => {});
+      audioRef.current = audio;
+    }
+  }, []);
+
   // Speak using OpenAI TTS
   const speak = useCallback(async (text: string) => {
     try {
@@ -306,12 +318,14 @@ export default function YoungCreators() {
       const audioBlob = await response.blob();
       const audioUrl = URL.createObjectURL(audioBlob);
 
-      if (audioRef.current) {
-        audioRef.current.pause();
+      // Reuse existing audio element for mobile compatibility
+      if (!audioRef.current) {
+        audioRef.current = new Audio();
       }
 
-      const audio = new Audio(audioUrl);
-      audioRef.current = audio;
+      const audio = audioRef.current;
+      audio.pause();
+      audio.src = audioUrl;
 
       audio.onended = () => {
         setIsSpeaking(false);
@@ -536,12 +550,15 @@ export default function YoungCreators() {
 
   // Toggle recording
   const toggleListening = useCallback(() => {
+    // Initialize audio on first tap for mobile browsers
+    initAudioForMobile();
+
     if (isListening) {
       stopRecording();
     } else {
       startRecording();
     }
-  }, [isListening, startRecording, stopRecording]);
+  }, [isListening, startRecording, stopRecording, initAudioForMobile]);
 
   // Reset conversation
   const resetConversation = useCallback(() => {
