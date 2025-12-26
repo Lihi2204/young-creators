@@ -233,6 +233,22 @@ interface ConversationMessage {
   content: string;
 }
 
+// Intro text that appears on load
+const INTRO_TEXT = `היי!
+אני דנה
+אני פה לעזור לכם להמציא אפליקציות ומשחקים מגניבים!
+
+איך מדברים איתי?
+לחצו על כפתור המיקרופון וחכו שנייה עד שיהפוך לאדום. עכשיו אפשר לדבר!
+
+כשסיימתם - לחצו שוב והאדום ייעלם.
+
+שימו לב:
+ספרו לי את הרעיון שלכם בקצרה - משפט או שניים מספיקים! אני אשאל אתכם שאלות ונבנה את זה ביחד, צעד אחרי צעד.
+
+יאללה, בואו נתחיל!
+מה תרצו להמציא היום?`;
+
 // Main App Component
 export default function YoungCreators() {
   const [isListening, setIsListening] = useState(false);
@@ -246,12 +262,15 @@ export default function YoungCreators() {
   const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
   const [typingText, setTypingText] = useState('');
   const [isTypingEffect, setIsTypingEffect] = useState(false);
+  const [showIntro, setShowIntro] = useState(true);
+  const [introPlayed, setIntroPlayed] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const typingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const introAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Typing effect for AI responses
   const startTypingEffect = useCallback((text: string, onComplete?: () => void) => {
@@ -286,6 +305,39 @@ export default function YoungCreators() {
       }
     };
   }, []);
+
+  // Play intro audio
+  const playIntroAudio = useCallback(() => {
+    if (introAudioRef.current) {
+      introAudioRef.current.currentTime = 0;
+      introAudioRef.current.play().catch(() => {});
+      setIsSpeaking(true);
+      setMood('speaking');
+    }
+  }, []);
+
+  // Initialize intro on first user interaction
+  const startIntro = useCallback(() => {
+    if (!introPlayed) {
+      setIntroPlayed(true);
+
+      // Create and play intro audio
+      const introAudio = new Audio('/intro.wav');
+      introAudioRef.current = introAudio;
+
+      introAudio.onended = () => {
+        setIsSpeaking(false);
+        setMood('idle');
+      };
+
+      introAudio.play().then(() => {
+        setIsSpeaking(true);
+        setMood('speaking');
+      }).catch(() => {
+        // Autoplay blocked - user will need to tap the intro bubble
+      });
+    }
+  }, [introPlayed]);
 
   // Initialize audio element on first user interaction (for mobile)
   const initAudioForMobile = useCallback(() => {
@@ -629,6 +681,30 @@ export default function YoungCreators() {
             disabled={isThinking || isSpeaking || isCreating}
           />
         </div>
+
+        {/* Intro bubble - clickable to replay */}
+        {showIntro && messages.length === 0 && !currentArtifact && (
+          <div
+            onClick={() => {
+              startIntro();
+              playIntroAudio();
+            }}
+            className="bg-white/95 backdrop-blur-sm rounded-2xl p-5 mb-6 shadow-lg border-2 border-purple-300 cursor-pointer hover:bg-white transition-all"
+          >
+            <div className="flex items-start gap-3">
+              <span className="text-3xl">👋</span>
+              <div className="flex-1">
+                <p className="text-gray-800 text-lg leading-relaxed whitespace-pre-line" dir="rtl">
+                  {INTRO_TEXT}
+                </p>
+                <p className="text-purple-500 text-sm mt-3 flex items-center gap-1">
+                  <span>🔊</span>
+                  <span>לחצו לשמוע שוב</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Suggestions - only show when no messages */}
         {messages.length === 0 && !currentArtifact && (
