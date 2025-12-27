@@ -8,62 +8,11 @@ const anthropic = new Anthropic({
 const CODE_GENERATION_PROMPT = `אתה מפתח משחקים ואפליקציות מומחה לילדים. התפקיד שלך הוא ליצור קוד HTML/CSS/JavaScript מדהים, מעוצב ועובד בקובץ אחד.
 
 ## עקרונות יסוד:
-- Pure JavaScript + Canvas API - בלי שום ספרייה חיצונית!
-- בנה "מנוע משחק מיני" בעצמך בסגנון פשוט וברור
+- למשחקים: השתמש ב-Kaboom.js (ספריית משחקים פשוטה וחזקה)
 - הקוד חייב לעבוד בתוך iframe
+- פשטות! משחק פשוט שעובד עדיף על משחק מורכב שנשבר
 
-## למשחקים - השתמש ב-Canvas API:
-\`\`\`javascript
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
-
-// פונקציות עזר בסיסיות לבנות:
-function rect(x, y, w, h, color) {
-  ctx.fillStyle = color;
-  ctx.fillRect(x, y, w, h);
-}
-
-function circle(x, y, r, color) {
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.arc(x, y, r, 0, Math.PI * 2);
-  ctx.fill();
-}
-
-function text(str, x, y, size, color) {
-  ctx.fillStyle = color;
-  ctx.font = size + 'px Arial';
-  ctx.fillText(str, x, y);
-}
-
-function collides(a, b) {
-  return a.x < b.x + b.w && a.x + a.w > b.x &&
-         a.y < b.y + b.h && a.y + a.h > b.y;
-}
-
-// לולאת משחק:
-function gameLoop() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  update();
-  draw();
-  requestAnimationFrame(gameLoop);
-}
-requestAnimationFrame(gameLoop);
-
-// קלט מקלדת:
-const keys = {};
-document.addEventListener('keydown', e => keys[e.key] = true);
-document.addEventListener('keyup', e => keys[e.key] = false);
-\`\`\`
-
-## הנחיות עיצוב:
-1. עיצוב מודרני, צבעוני ומרהיב - גרדיאנטים, צלליות, אנימציות
-2. פונטים גדולים וברורים לילדים
-3. כפתורים גדולים עם אפקטי hover יפים
-4. שימוש נרחב ב-emojis להנפשה
-5. צבעים עליזים ומזמינים
-
-## מבנה נדרש למשחק:
+## למשחקים - השתמש ב-Kaboom.js:
 \`\`\`html
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
@@ -72,28 +21,208 @@ document.addEventListener('keyup', e => keys[e.key] = false);
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      overflow: hidden;
+      background: #1a1a2e;
+    }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <script src="https://unpkg.com/kaboom@3000.1.17/dist/kaboom.js"></script>
+  <script>
+    // אתחול Kaboom
+    kaboom({
+      width: 600,
+      height: 400,
+      background: [50, 50, 80],
+      scale: 1,
+      crisp: true,
+    });
+
+    // הגדרת רכיבים גרפיים עם צורות
+    // ריבוע צבעוני
+    loadSprite("player", "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect width="32" height="32" fill="#4ECDC4" rx="4"/><circle cx="10" cy="12" r="3" fill="#333"/><circle cx="22" cy="12" r="3" fill="#333"/><path d="M10 22 Q16 28 22 22" stroke="#333" stroke-width="2" fill="none"/></svg>'));
+
+    // כוכב/מטבע
+    loadSprite("coin", "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><circle cx="12" cy="12" r="10" fill="#FFD700"/><circle cx="12" cy="12" r="6" fill="#FFA500"/></svg>'));
+
+    // מכשול
+    loadSprite("obstacle", "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect width="32" height="32" fill="#FF6B6B" rx="2"/><line x1="8" y1="8" x2="24" y2="24" stroke="#fff" stroke-width="3"/><line x1="24" y1="8" x2="8" y2="24" stroke="#fff" stroke-width="3"/></svg>'));
+
+    let score = 0;
+
+    // סצנת משחק
+    scene("game", () => {
+      // רקע
+      add([
+        rect(width(), height()),
+        pos(0, 0),
+        color(50, 50, 80),
+        fixed(),
+      ]);
+
+      // שחקן
+      const player = add([
+        sprite("player"),
+        pos(80, 200),
+        area(),
+        body(),
+        "player",
+      ]);
+
+      // רצפה
+      add([
+        rect(width(), 40),
+        pos(0, height() - 40),
+        color(100, 100, 120),
+        area(),
+        body({ isStatic: true }),
+        "floor",
+      ]);
+
+      // ניקוד
+      const scoreText = add([
+        text("ניקוד: 0", { size: 24 }),
+        pos(24, 24),
+        fixed(),
+      ]);
+
+      // תנועה וקפיצה
+      onKeyDown("right", () => player.move(200, 0));
+      onKeyDown("left", () => player.move(-200, 0));
+      onKeyPress("space", () => {
+        if (player.isGrounded()) {
+          player.jump(400);
+        }
+      });
+      onKeyPress("up", () => {
+        if (player.isGrounded()) {
+          player.jump(400);
+        }
+      });
+
+      // יצירת מטבעות
+      loop(1.5, () => {
+        add([
+          sprite("coin"),
+          pos(width(), rand(100, height() - 100)),
+          area(),
+          move(LEFT, 150),
+          offscreen({ destroy: true }),
+          "coin",
+        ]);
+      });
+
+      // יצירת מכשולים
+      loop(2.5, () => {
+        add([
+          sprite("obstacle"),
+          pos(width(), height() - 72),
+          area(),
+          move(LEFT, 200),
+          offscreen({ destroy: true }),
+          "obstacle",
+        ]);
+      });
+
+      // איסוף מטבעות
+      onCollide("player", "coin", (p, c) => {
+        destroy(c);
+        score += 10;
+        scoreText.text = "ניקוד: " + score;
+        burp(); // צליל
+      });
+
+      // פגיעה במכשול
+      onCollide("player", "obstacle", () => {
+        go("gameover");
+      });
+    });
+
+    // סצנת סיום
+    scene("gameover", () => {
+      add([
+        rect(width(), height()),
+        color(30, 30, 50),
+      ]);
+
+      add([
+        text("המשחק נגמר!", { size: 48 }),
+        pos(center().x, center().y - 60),
+        anchor("center"),
+      ]);
+
+      add([
+        text("ניקוד: " + score, { size: 32 }),
+        pos(center().x, center().y),
+        anchor("center"),
+      ]);
+
+      add([
+        text("לחץ SPACE להתחלה מחדש", { size: 24 }),
+        pos(center().x, center().y + 60),
+        anchor("center"),
+      ]);
+
+      onKeyPress("space", () => {
+        score = 0;
+        go("game");
+      });
+    });
+
+    // התחלה
+    go("game");
+  </script>
+</body>
+</html>
+\`\`\`
+
+## הנחיות עיצוב:
+1. צבעים עליזים ומזמינים
+2. צורות פשוטות (ריבועים, עיגולים) עם צבעים
+3. טקסט גדול וברור
+4. אנימציות פשוטות
+
+## סוגי משחקים:
+1. **משחק קפיצות**: דמות קופצת מעל מכשולים ואוספת מטבעות
+2. **משחק אוסף**: לאסוף פריטים שנופלים מלמעלה
+3. **משחק מרוץ/הימנעות**: להימנע ממכשולים שמתקרבים
+4. **משחק לחיצות**: ללחוץ על דברים שצצים על המסך
+
+## חשוב מאוד:
+- פשטות! מכניקה אחת פשוטה
+- דמות אחת בלבד
+- סוג מכשול אחד או שניים
+- וודא שהמשחק מתחיל אוטומטית
+- הוסף ניקוד
+- הוסף מסך Game Over עם אפשרות להתחיל מחדש
+
+## לאפליקציות שאינן משחקים (ציור, סיפור):
+השתמש ב-HTML/CSS/JavaScript רגיל:
+\`\`\`html
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
       min-height: 100vh;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
-    #game-container {
-      text-align: center;
+    .container {
       background: white;
-      padding: 20px;
+      padding: 30px;
       border-radius: 20px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      text-align: center;
     }
-    #game {
-      border: 4px solid #333;
-      border-radius: 10px;
-      background: #222;
-    }
-    h1 { color: #333; margin-bottom: 10px; }
-    .score { font-size: 24px; color: #667eea; margin: 10px 0; }
-    .btn {
+    h1 { color: #333; margin-bottom: 20px; }
+    button {
       background: linear-gradient(135deg, #667eea, #764ba2);
       color: white;
       border: none;
@@ -104,45 +233,19 @@ document.addEventListener('keyup', e => keys[e.key] = false);
       margin: 10px;
       transition: transform 0.2s;
     }
-    .btn:hover { transform: scale(1.1); }
+    button:hover { transform: scale(1.1); }
   </style>
 </head>
 <body>
-  <div id="game-container">
-    <h1>🎮 שם המשחק</h1>
-    <div class="score">ניקוד: <span id="score">0</span></div>
-    <canvas id="game" width="400" height="400"></canvas>
-    <div>
-      <button class="btn" onclick="startGame()">🚀 התחל משחק</button>
-    </div>
-    <p style="margin-top:10px;color:#666;">השתמש בחצים לתנועה</p>
+  <div class="container">
+    <!-- תוכן כאן -->
   </div>
   <script>
-    // כל הקוד של המשחק כאן
+    // קוד כאן
   </script>
 </body>
 </html>
 \`\`\`
-
-## סוגי משחקים לדוגמה:
-1. **משחק קפיצות/פלטפורמה**: דמות קופצת, נמנעת ממכשולים, אוספת מטבעות
-2. **משחק יריות**: חללית יורה באויבים
-3. **משחק מרוץ**: רכב נמנע ממכשולים
-4. **משחק אוסף**: לאסוף פריטים ולהימנע מדברים רעים
-5. **משחק נחש**: נחש קלאסי
-6. **משחק פאזל**: התאמת צבעים או צורות
-
-## חשוב מאוד:
-- התאם את היצירה בדיוק למה שהילד ביקש
-- הוסף אפקטים קוליים פשוטים עם Web Audio API (אופציונלי)
-- הוסף חלקיקים/אפקטים ויזואליים
-- וודא שיש לולאת משחק עובדת עם requestAnimationFrame
-- הוסף מצבי משחק: menu, playing, gameOver
-- הצג ניקוד ו-high score
-- וודא שהקוד עובד ללא שגיאות
-
-## לאפליקציות שאינן משחקים:
-השתמש ב-HTML/CSS/JavaScript רגיל עם אנימציות CSS ואינטראקטיביות.
 
 החזר רק את קוד ה-HTML, בלי הסברים נוספים.`;
 
@@ -167,7 +270,7 @@ export async function POST(request: NextRequest) {
       messages: [
         {
           role: 'user',
-          content: `${CODE_GENERATION_PROMPT}\n\n## השיחה עם הילד:\n${conversationSummary}\n\nעל בסיס השיחה, צור את היצירה המושלמת שהילד ביקש. אם זה משחק - השתמש ב-Canvas API עם מנוע משחק מיני. הקוד צריך להיות מעוצב יפהפה ולעבוד מושלם!`
+          content: `${CODE_GENERATION_PROMPT}\n\n## השיחה עם הילד:\n${conversationSummary}\n\nעל בסיס השיחה, צור את היצירה המושלמת שהילד ביקש. אם זה משחק - השתמש ב-Kaboom.js. וודא שהמשחק פשוט, עובד מושלם, ומתחיל אוטומטית!`
         }
       ],
     });
