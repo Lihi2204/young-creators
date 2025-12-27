@@ -214,7 +214,8 @@ const ArtifactDisplay = ({ code, isVisible }: { code: string | null; isVisible: 
       <div className="p-4">
         <iframe
           srcDoc={code}
-          className="w-full h-96 border-0 rounded-xl"
+          className="w-full border-0 rounded-xl"
+          style={{ height: '70vh', minHeight: '500px' }}
           sandbox="allow-scripts"
           title="Created artifact"
         />
