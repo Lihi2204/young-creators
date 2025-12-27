@@ -228,14 +228,153 @@ const CreatingIndicator = ({ progress }: { progress: number }) => {
 
 // The generated artifact display
 const ArtifactDisplay = ({ code, isVisible }: { code: string | null; isVisible: boolean }) => {
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  const playPublishAudio = () => {
+    const audio = new Audio('/publish-button.wav');
+    audio.play().catch(() => {});
+  };
+
+  const playLinkCopiedAudio = () => {
+    const audio = new Audio('/link-copied.wav');
+    audio.play().catch(() => {});
+  };
+
+  const handlePublish = async () => {
+    if (!code || isPublishing) return;
+
+    // Play audio when button is clicked
+    playPublishAudio();
+
+    setIsPublishing(true);
+    try {
+      const response = await fetch('/api/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      setPublishedUrl(data.url);
+
+      // Auto-copy to clipboard
+      await navigator.clipboard.writeText(data.url);
+      setCopySuccess(true);
+
+      // Play "link copied" audio
+      playLinkCopiedAudio();
+
+      // Reset copy success after 3 seconds
+      setTimeout(() => setCopySuccess(false), 3000);
+
+    } catch (error) {
+      console.error('Publish error:', error);
+      alert('שגיאה בפרסום היצירה');
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const handleCopyAgain = async () => {
+    if (publishedUrl) {
+      await navigator.clipboard.writeText(publishedUrl);
+      setCopySuccess(true);
+
+      // Play "link copied" audio
+      playLinkCopiedAudio();
+
+      setTimeout(() => setCopySuccess(false), 3000);
+    }
+  };
+
   if (!isVisible || !code) return null;
 
   return (
     <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border-4 border-yellow-400">
-      <div className="bg-gradient-to-r from-yellow-400 to-orange-400 px-4 py-2 flex items-center gap-2">
-        <span className="text-2xl"></span>
-        <span className="font-bold text-white text-lg">היצירה שלך!</span>
+      <div className="bg-gradient-to-r from-yellow-400 to-orange-400 px-4 py-2 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">🎨</span>
+          <span className="font-bold text-white text-lg">היצירה שלך!</span>
+        </div>
+
+        {/* Publish button */}
+        <div className="flex items-center gap-2">
+          {publishedUrl ? (
+            <button
+              onClick={handleCopyAgain}
+              className={`
+                flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium
+                transition-all duration-300
+                ${copySuccess
+                  ? 'bg-green-500 text-white'
+                  : 'bg-white/90 text-orange-600 hover:bg-white'
+                }
+              `}
+            >
+              {copySuccess ? (
+                <>
+                  <span>✅</span>
+                  <span>הקישור הועתק!</span>
+                </>
+              ) : (
+                <>
+                  <span>📋</span>
+                  <span>העתק קישור</span>
+                </>
+              )}
+            </button>
+          ) : (
+            <button
+              onClick={handlePublish}
+              disabled={isPublishing}
+              className={`
+                flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium
+                transition-all duration-300
+                ${isPublishing
+                  ? 'bg-white/50 text-orange-400 cursor-wait'
+                  : 'bg-white/90 text-orange-600 hover:bg-white hover:scale-105'
+                }
+              `}
+            >
+              {isPublishing ? (
+                <>
+                  <span className="animate-spin">⏳</span>
+                  <span>מפרסם...</span>
+                </>
+              ) : (
+                <>
+                  <span>🚀</span>
+                  <span>לפרסם ולקבל את הקישור</span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Published URL display */}
+      {publishedUrl && (
+        <div className="bg-green-50 px-4 py-2 flex items-center justify-between border-b border-green-200">
+          <div className="flex items-center gap-2 text-green-700 text-sm overflow-hidden">
+            <span>🔗</span>
+            <span className="truncate max-w-xs">{publishedUrl}</span>
+          </div>
+          <button
+            onClick={handleCopyAgain}
+            className="text-green-600 hover:text-green-800 text-xs underline"
+          >
+            העתק שוב
+          </button>
+        </div>
+      )}
+
       <div className="p-4">
         <iframe
           srcDoc={code}
