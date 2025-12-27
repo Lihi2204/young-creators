@@ -216,7 +216,7 @@ const ArtifactDisplay = ({ code, isVisible }: { code: string | null; isVisible: 
           srcDoc={code}
           className="w-full border-0 rounded-xl"
           style={{ height: '70vh', minHeight: '500px' }}
-          sandbox="allow-scripts allow-same-origin"
+          sandbox="allow-scripts"
           title="Created artifact"
         />
       </div>
