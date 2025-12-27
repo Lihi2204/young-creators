@@ -1,11 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { existsSync } from 'fs';
-import path from 'path';
-import crypto from 'crypto';
-
-// Directory to store published artifacts
-const ARTIFACTS_DIR = path.join(process.cwd(), 'public', 'artifacts');
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,27 +8,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No code provided' }, { status: 400 });
     }
 
-    // Generate a unique ID for the artifact
-    const id = crypto.randomBytes(6).toString('hex');
+    // Encode the code as base64
+    const encodedCode = Buffer.from(code).toString('base64');
 
-    // Ensure the artifacts directory exists
-    if (!existsSync(ARTIFACTS_DIR)) {
-      await mkdir(ARTIFACTS_DIR, { recursive: true });
-    }
+    // Get the base URL from the request
+    const protocol = request.headers.get('x-forwarded-proto') || 'https';
+    const host = request.headers.get('host') || 'young-creators-flax.vercel.app';
+    const baseUrl = `${protocol}://${host}`;
 
-    // Save the artifact as an HTML file
-    const filename = `${id}.html`;
-    const filepath = path.join(ARTIFACTS_DIR, filename);
-
-    await writeFile(filepath, code, 'utf-8');
-
-    // Generate the URL for the artifact
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    const artifactUrl = `${baseUrl}/artifacts/${id}.html`;
+    // Create URL with encoded code
+    const artifactUrl = `${baseUrl}/view?code=${encodedCode}`;
 
     return NextResponse.json({
       success: true,
-      id,
       url: artifactUrl
     });
 
