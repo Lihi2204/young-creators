@@ -190,16 +190,41 @@ const SpeechBubble = ({ text, isUser, isTyping, displayedText }: { text: string;
   );
 };
 
-// Loading indicator for code generation
-const CreatingIndicator = () => (
-  <div className="bg-gradient-to-r from-purple-500/30 to-pink-500/30 backdrop-blur-sm rounded-2xl p-6 mb-4 border-2 border-purple-300/50">
-    <div className="flex items-center justify-center gap-3">
-      <span className="text-4xl animate-spin"></span>
-      <div className="text-white text-xl font-medium">יוצר את האפליקציה שלך...</div>
-      <span className="text-4xl animate-bounce"></span>
+// Loading indicator for code generation with progress bar
+const CreatingIndicator = ({ progress }: { progress: number }) => {
+  const stages = [
+    { threshold: 0, text: '🎨 מתחיל לעצב...', emoji: '✨' },
+    { threshold: 15, text: '🧠 חושב על הרעיון...', emoji: '💭' },
+    { threshold: 30, text: '📝 כותב את הקוד...', emoji: '⌨️' },
+    { threshold: 50, text: '🎮 בונה את המשחק...', emoji: '🔧' },
+    { threshold: 70, text: '🎨 מוסיף עיצוב...', emoji: '🖌️' },
+    { threshold: 85, text: '✅ בודק שהכל עובד...', emoji: '🔍' },
+    { threshold: 95, text: '🚀 כמעט מוכן!', emoji: '🎉' },
+  ];
+
+  const currentStage = [...stages].reverse().find(s => progress >= s.threshold) || stages[0];
+
+  return (
+    <div className="bg-gradient-to-r from-purple-500/30 to-pink-500/30 backdrop-blur-sm rounded-2xl p-6 mb-4 border-2 border-purple-300/50">
+      <div className="text-center mb-4">
+        <span className="text-4xl animate-bounce inline-block">{currentStage.emoji}</span>
+        <div className="text-white text-xl font-medium mt-2">{currentStage.text}</div>
+      </div>
+
+      {/* Progress bar */}
+      <div className="w-full bg-white/20 rounded-full h-4 mb-2 overflow-hidden">
+        <div
+          className="h-full bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-500 rounded-full transition-all duration-500 ease-out"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+
+      <div className="text-white/80 text-center text-lg font-bold">
+        {Math.round(progress)}%
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // The generated artifact display
 const ArtifactDisplay = ({ code, isVisible }: { code: string | null; isVisible: boolean }) => {
@@ -265,6 +290,7 @@ export default function YoungCreators() {
   const [isTypingEffect, setIsTypingEffect] = useState(false);
   const [showIntro, setShowIntro] = useState(true);
   const [introPlayed, setIntroPlayed] = useState(false);
+  const [creationProgress, setCreationProgress] = useState(0);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -306,6 +332,40 @@ export default function YoungCreators() {
       }
     };
   }, []);
+
+  // Load conversation from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedMessages = localStorage.getItem('young-creators-messages');
+      const savedHistory = localStorage.getItem('young-creators-history');
+      const savedArtifact = localStorage.getItem('young-creators-artifact');
+
+      if (savedMessages) {
+        setMessages(JSON.parse(savedMessages));
+      }
+      if (savedHistory) {
+        setConversationHistory(JSON.parse(savedHistory));
+      }
+      if (savedArtifact) {
+        setCurrentArtifact(savedArtifact);
+      }
+    } catch (error) {
+      console.error('Error loading from localStorage:', error);
+    }
+  }, []);
+
+  // Save conversation to localStorage when it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('young-creators-messages', JSON.stringify(messages));
+      localStorage.setItem('young-creators-history', JSON.stringify(conversationHistory));
+      if (currentArtifact) {
+        localStorage.setItem('young-creators-artifact', currentArtifact);
+      }
+    } catch (error) {
+      console.error('Error saving to localStorage:', error);
+    }
+  }, [messages, conversationHistory, currentArtifact]);
 
   // Play intro audio
   const playIntroAudio = useCallback(() => {
@@ -406,6 +466,19 @@ export default function YoungCreators() {
     try {
       setIsCreating(true);
       setMood('creating');
+      setCreationProgress(0);
+
+      // Simulate progress while waiting for API (typically takes 30-60 seconds)
+      const progressInterval = setInterval(() => {
+        setCreationProgress(prev => {
+          // Slow down as we approach 90% (never reach 100% until done)
+          if (prev < 30) return prev + 3;
+          if (prev < 60) return prev + 2;
+          if (prev < 80) return prev + 1;
+          if (prev < 90) return prev + 0.5;
+          return prev + 0.1;
+        });
+      }, 500);
 
       const response = await fetch('/api/generate', {
         method: 'POST',
@@ -413,14 +486,23 @@ export default function YoungCreators() {
         body: JSON.stringify({ conversationHistory: history }),
       });
 
+      clearInterval(progressInterval);
+
       const data = await response.json();
 
       if (data.error) {
         throw new Error(data.error);
       }
 
+      // Complete the progress
+      setCreationProgress(100);
+
+      // Small delay to show 100%
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       setCurrentArtifact(data.code);
       setIsCreating(false);
+      setCreationProgress(0);
       setMood('happy');
 
     } catch (error) {
@@ -621,10 +703,19 @@ export default function YoungCreators() {
     setMood('idle');
     setLiveTranscript('');
     setIsCreating(false);
+    setCreationProgress(0);
     setTypingText('');
     setIsTypingEffect(false);
     if (typingIntervalRef.current) {
       clearInterval(typingIntervalRef.current);
+    }
+    // Clear localStorage
+    try {
+      localStorage.removeItem('young-creators-messages');
+      localStorage.removeItem('young-creators-history');
+      localStorage.removeItem('young-creators-artifact');
+    } catch (error) {
+      console.error('Error clearing localStorage:', error);
     }
   }, []);
 
@@ -740,7 +831,7 @@ export default function YoungCreators() {
         )}
 
         {/* Creating indicator */}
-        {isCreating && <CreatingIndicator />}
+        {isCreating && <CreatingIndicator progress={creationProgress} />}
 
         {/* Generated Artifact */}
         <ArtifactDisplay
