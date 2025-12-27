@@ -18,11 +18,14 @@ function ArtifactViewer() {
     );
   }
 
-  // Decode the code from URL-safe base64
+  // Decode the code from URL-safe base64 with UTF-8 support
   let code = '';
   try {
     const decodedBase64 = decodeURIComponent(encodedCode);
-    code = atob(decodedBase64);
+    // atob() doesn't support UTF-8, so we need to decode manually
+    const binaryString = atob(decodedBase64);
+    const bytes = Uint8Array.from(binaryString, char => char.charCodeAt(0));
+    code = new TextDecoder('utf-8').decode(bytes);
   } catch {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
