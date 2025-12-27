@@ -232,9 +232,13 @@ const ArtifactDisplay = ({ code, isVisible }: { code: string | null; isVisible: 
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
 
-  const playPublishAudio = () => {
-    const audio = new Audio('/publish-button.wav');
-    audio.play().catch(() => {});
+  const playPublishAudio = (): Promise<void> => {
+    return new Promise((resolve) => {
+      const audio = new Audio('/publish-button.wav');
+      audio.onended = () => resolve();
+      audio.onerror = () => resolve();
+      audio.play().catch(() => resolve());
+    });
   };
 
   const playLinkCopiedAudio = () => {
@@ -245,8 +249,8 @@ const ArtifactDisplay = ({ code, isVisible }: { code: string | null; isVisible: 
   const handlePublish = async () => {
     if (!code || isPublishing) return;
 
-    // Play audio when button is clicked
-    playPublishAudio();
+    // Play audio when button is clicked and wait for it to finish
+    await playPublishAudio();
 
     setIsPublishing(true);
     try {
@@ -268,7 +272,7 @@ const ArtifactDisplay = ({ code, isVisible }: { code: string | null; isVisible: 
       await navigator.clipboard.writeText(data.url);
       setCopySuccess(true);
 
-      // Play "link copied" audio
+      // Play "link copied" audio after first audio finished
       playLinkCopiedAudio();
 
       // Reset copy success after 3 seconds

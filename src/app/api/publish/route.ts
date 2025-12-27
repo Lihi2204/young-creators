@@ -8,8 +8,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No code provided' }, { status: 400 });
     }
 
-    // Encode the code as base64
-    const encodedCode = Buffer.from(code).toString('base64');
+    // Encode the code as base64 and make it URL-safe
+    const base64Code = Buffer.from(code).toString('base64');
+    const encodedCode = encodeURIComponent(base64Code);
 
     // Get the base URL from the request
     const protocol = request.headers.get('x-forwarded-proto') || 'https';
