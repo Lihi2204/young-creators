@@ -71,6 +71,34 @@ const CODE_GENERATION_PROMPT = `אתה מפתח אפליקציות ומשחקי�
       font-size: 14px;
       margin-top: 12px;
     }
+    /* כפתורי מובייל - מוסתרים כברירת מחדל */
+    .mobile-controls {
+      display: none;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 15px;
+      flex-wrap: wrap;
+    }
+    .mobile-btn {
+      width: 60px;
+      height: 60px;
+      font-size: 24px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      border: 2px solid rgba(255,255,255,0.3);
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+    .mobile-btn:active {
+      background: rgba(255,255,255,0.4);
+      transform: scale(0.95);
+    }
   </style>
 </head>
 <body>
@@ -81,7 +109,14 @@ const CODE_GENERATION_PROMPT = `אתה מפתח אפליקציות ומשחקי�
     <div>
       <button class="btn" onclick="startGame()">🚀 התחל משחק</button>
     </div>
-    <p class="instructions">🎯 השתמש בחצים או עכבר לשחק</p>
+    <p class="instructions">🎯 מחשב: חיצים | מובייל: כפתורים או מגע</p>
+    <!-- כפתורי ניווט למובייל -->
+    <div class="mobile-controls" id="mobileControls">
+      <button class="mobile-btn" id="leftBtn">⬅️</button>
+      <button class="mobile-btn" id="upBtn">⬆️</button>
+      <button class="mobile-btn" id="downBtn">⬇️</button>
+      <button class="mobile-btn" id="rightBtn">➡️</button>
+    </div>
   </div>
   <script>
     const canvas = document.getElementById('game');
@@ -206,6 +241,40 @@ const CODE_GENERATION_PROMPT = `אתה מפתח אפליקציות ומשחקי�
     });
     canvas.addEventListener('click', e => {
       // טיפול בלחיצה
+    });
+
+    // זיהוי מכשיר מגע והצגת כפתורים
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    if (isTouchDevice) {
+      document.getElementById('mobileControls').style.display = 'flex';
+    }
+
+    // כפתורי מובייל וירטואליים
+    const directions = {left: 'ArrowLeft', right: 'ArrowRight', up: 'ArrowUp', down: 'ArrowDown'};
+    Object.entries(directions).forEach(([dir, key]) => {
+      const btn = document.getElementById(dir + 'Btn');
+      if (btn) {
+        btn.addEventListener('touchstart', e => { e.preventDefault(); keys[key] = true; });
+        btn.addEventListener('touchend', e => { keys[key] = false; });
+        btn.addEventListener('mousedown', e => { keys[key] = true; });
+        btn.addEventListener('mouseup', e => { keys[key] = false; });
+      }
+    });
+
+    // מגע על ה-canvas
+    canvas.addEventListener('touchstart', e => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      mouseX = touch.clientX - rect.left;
+      mouseY = touch.clientY - rect.top;
+    });
+    canvas.addEventListener('touchmove', e => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      mouseX = touch.clientX - rect.left;
+      mouseY = touch.clientY - rect.top;
     });
 
     // ציור מסך התחלתי
