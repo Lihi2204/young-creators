@@ -237,6 +237,14 @@ const ArtifactDisplay = ({ code, isVisible, sessionId, onSessionIdUpdate }: {
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
 
+  // Reset publishedUrl when sessionId becomes null (user clicked "start over")
+  useEffect(() => {
+    if (sessionId === null) {
+      setPublishedUrl(null);
+      setCopySuccess(false);
+    }
+  }, [sessionId]);
+
   const playPublishAudio = (): Promise<void> => {
     return new Promise((resolve) => {
       const audio = new Audio('/publish-button.wav');
