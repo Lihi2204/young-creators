@@ -227,7 +227,12 @@ const CreatingIndicator = ({ progress }: { progress: number }) => {
 };
 
 // The generated artifact display
-const ArtifactDisplay = ({ code, isVisible }: { code: string | null; isVisible: boolean }) => {
+const ArtifactDisplay = ({ code, isVisible, sessionId, onSessionIdUpdate }: {
+  code: string | null;
+  isVisible: boolean;
+  sessionId: string | null;
+  onSessionIdUpdate: (id: string) => void;
+}) => {
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -257,13 +262,18 @@ const ArtifactDisplay = ({ code, isVisible }: { code: string | null; isVisible: 
       const response = await fetch('/api/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ code, sessionId }),
       });
 
       const data = await response.json();
 
       if (data.error) {
         throw new Error(data.error);
+      }
+
+      // Save session ID for future updates
+      if (data.sessionId) {
+        onSessionIdUpdate(data.sessionId);
       }
 
       setPublishedUrl(data.url);
@@ -426,6 +436,7 @@ export default function YoungCreators() {
   const [isCreating, setIsCreating] = useState(false);
   const [liveTranscript, setLiveTranscript] = useState('');
   const [currentArtifact, setCurrentArtifact] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [mood, setMood] = useState('idle');
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
@@ -482,6 +493,7 @@ export default function YoungCreators() {
       const savedMessages = localStorage.getItem('young-creators-messages');
       const savedHistory = localStorage.getItem('young-creators-history');
       const savedArtifact = localStorage.getItem('young-creators-artifact');
+      const savedSessionId = localStorage.getItem('young-creators-sessionId');
 
       if (savedMessages) {
         setMessages(JSON.parse(savedMessages));
@@ -491,6 +503,9 @@ export default function YoungCreators() {
       }
       if (savedArtifact) {
         setCurrentArtifact(savedArtifact);
+      }
+      if (savedSessionId) {
+        setSessionId(savedSessionId);
       }
     } catch (error) {
       console.error('Error loading from localStorage:', error);
@@ -505,10 +520,13 @@ export default function YoungCreators() {
       if (currentArtifact) {
         localStorage.setItem('young-creators-artifact', currentArtifact);
       }
+      if (sessionId) {
+        localStorage.setItem('young-creators-sessionId', sessionId);
+      }
     } catch (error) {
       console.error('Error saving to localStorage:', error);
     }
-  }, [messages, conversationHistory, currentArtifact]);
+  }, [messages, conversationHistory, currentArtifact, sessionId]);
 
   // Play intro audio
   const playIntroAudio = useCallback(() => {
@@ -843,6 +861,7 @@ export default function YoungCreators() {
     setCurrentArtifact(null);
     setMessages([]);
     setConversationHistory([]);
+    setSessionId(null); // Clear sessionId so next publish creates new link
     setMood('idle');
     setLiveTranscript('');
     setIsCreating(false);
@@ -857,6 +876,7 @@ export default function YoungCreators() {
       localStorage.removeItem('young-creators-messages');
       localStorage.removeItem('young-creators-history');
       localStorage.removeItem('young-creators-artifact');
+      localStorage.removeItem('young-creators-sessionId');
     } catch (error) {
       console.error('Error clearing localStorage:', error);
     }
@@ -980,6 +1000,8 @@ export default function YoungCreators() {
         <ArtifactDisplay
           code={currentArtifact}
           isVisible={!!currentArtifact}
+          sessionId={sessionId}
+          onSessionIdUpdate={setSessionId}
         />
 
         {/* Reset button */}
