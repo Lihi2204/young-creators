@@ -28,7 +28,7 @@ export default async function ViewPage({ params }: ViewPageProps) {
               srcDoc={code}
               className="w-full border-0 rounded-xl"
               style={{ height: '80vh', minHeight: '500px' }}
-              sandbox="allow-scripts"
+              sandbox="allow-scripts allow-same-origin"
               title="Artifact"
             />
           </div>
