@@ -117,7 +117,7 @@ const CODE_GENERATION_PROMPT = `אתה מפתח אפליקציות ומשחקי�
     </div>
     <p class="instructions">🎯 מחשב: חיצים | מובייל: כפתורים או מגע</p>
     <!-- כפתורי ניווט למובייל בסידור D-pad -->
-    <div class="mobile-controls" id="mobileControls">
+    <div class="mobile-controls" id="mobileControls" dir="ltr">
       <div class="dpad-row">
         <button class="mobile-btn" id="upBtn">⬆️</button>
       </div>
