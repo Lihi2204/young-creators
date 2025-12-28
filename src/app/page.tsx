@@ -445,6 +445,7 @@ export default function YoungCreators() {
   const [showIntro, setShowIntro] = useState(true);
   const [introPlayed, setIntroPlayed] = useState(false);
   const [creationProgress, setCreationProgress] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -485,6 +486,12 @@ export default function YoungCreators() {
         clearInterval(typingIntervalRef.current);
       }
     };
+  }, []);
+
+  // Detect mobile/touch device
+  useEffect(() => {
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    setIsMobile(isTouchDevice);
   }, []);
 
   // Load conversation from localStorage on mount
@@ -644,7 +651,7 @@ export default function YoungCreators() {
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversationHistory: history }),
+        body: JSON.stringify({ conversationHistory: history, isMobile }),
       });
 
       clearInterval(progressInterval);
@@ -671,7 +678,7 @@ export default function YoungCreators() {
       setIsCreating(false);
       setMood('idle');
     }
-  }, []);
+  }, [isMobile]);
 
   // Process transcribed text
   const handleUserInput = useCallback(async (text: string) => {

@@ -71,21 +71,25 @@ const CODE_GENERATION_PROMPT = `אתה מפתח אפליקציות ומשחקי�
       font-size: 14px;
       margin-top: 12px;
     }
-    /* כפתורי מובייל - מוסתרים כברירת מחדל */
+    /* כפתורי מובייל בסידור D-pad - מוסתרים כברירת מחדל */
     .mobile-controls {
       display: none;
-      justify-content: center;
-      gap: 10px;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
       margin-top: 15px;
-      flex-wrap: wrap;
+    }
+    .dpad-row {
+      display: flex;
+      gap: 5px;
     }
     .mobile-btn {
-      width: 60px;
-      height: 60px;
-      font-size: 24px;
+      width: 65px;
+      height: 65px;
+      font-size: 28px;
       border-radius: 50%;
-      background: rgba(255,255,255,0.2);
-      border: 2px solid rgba(255,255,255,0.3);
+      background: linear-gradient(145deg, #4a5568, #2d3748);
+      border: 3px solid #718096;
       color: white;
       cursor: pointer;
       display: flex;
@@ -94,10 +98,12 @@ const CODE_GENERATION_PROMPT = `אתה מפתח אפליקציות ומשחקי�
       user-select: none;
       -webkit-user-select: none;
       touch-action: manipulation;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
     .mobile-btn:active {
-      background: rgba(255,255,255,0.4);
+      background: linear-gradient(145deg, #2d3748, #1a202c);
       transform: scale(0.95);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
   </style>
 </head>
@@ -110,12 +116,16 @@ const CODE_GENERATION_PROMPT = `אתה מפתח אפליקציות ומשחקי�
       <button class="btn" onclick="startGame()">🚀 התחל משחק</button>
     </div>
     <p class="instructions">🎯 מחשב: חיצים | מובייל: כפתורים או מגע</p>
-    <!-- כפתורי ניווט למובייל -->
+    <!-- כפתורי ניווט למובייל בסידור D-pad -->
     <div class="mobile-controls" id="mobileControls">
-      <button class="mobile-btn" id="leftBtn">⬅️</button>
-      <button class="mobile-btn" id="upBtn">⬆️</button>
-      <button class="mobile-btn" id="downBtn">⬇️</button>
-      <button class="mobile-btn" id="rightBtn">➡️</button>
+      <div class="dpad-row">
+        <button class="mobile-btn" id="upBtn">⬆️</button>
+      </div>
+      <div class="dpad-row">
+        <button class="mobile-btn" id="leftBtn">⬅️</button>
+        <button class="mobile-btn" id="downBtn">⬇️</button>
+        <button class="mobile-btn" id="rightBtn">➡️</button>
+      </div>
     </div>
   </div>
   <script>
@@ -392,7 +402,7 @@ const CODE_GENERATION_PROMPT = `אתה מפתח אפליקציות ומשחקי�
 
 export async function POST(request: NextRequest) {
   try {
-    const { conversationHistory } = await request.json();
+    const { conversationHistory, isMobile = false } = await request.json();
 
     if (!process.env.ANTHROPIC_API_KEY) {
       return NextResponse.json({ error: 'Anthropic API key not configured' }, { status: 500 });
@@ -405,13 +415,24 @@ export async function POST(request: NextRequest) {
       )
       .join('\n');
 
+    // Device-specific instructions
+    const deviceNote = isMobile
+      ? `\n\n## חשוב - המשתמש במובייל/טאבלט!
+- ודא שכפתורי ה-D-pad הוירטואליים עובדים ומוצגים
+- התאם את גודל ה-canvas למסך קטן (width="350" height="300")
+- ודא שהמשחק מגיב לנגיעות touch
+- הכפתורים הוירטואליים צריכים להיות גדולים ונוחים ללחיצה`
+      : `\n\n## המשתמש במחשב
+- השתמש בחיצי מקלדת לשליטה
+- כפתורי המובייל יוסתרו אוטומטית`;
+
     const message = await anthropic.messages.create({
       model: 'claude-opus-4-5-20251101',
       max_tokens: 16000,
       messages: [
         {
           role: 'user',
-          content: `${CODE_GENERATION_PROMPT}\n\n## השיחה עם הילד:\n${conversationSummary}\n\nעל בסיס השיחה, צור את היצירה המושלמת שהילד ביקש. השתמש ב-Pure JavaScript + Canvas API למשחקים, או HTML/CSS/JS לאפליקציות אחרות. וודא שהקוד עובד מושלם ללא שגיאות, עם עיצוב מרהיב!`
+          content: `${CODE_GENERATION_PROMPT}${deviceNote}\n\n## השיחה עם הילד:\n${conversationSummary}\n\nעל בסיס השיחה, צור את היצירה המושלמת שהילד ביקש. השתמש ב-Pure JavaScript + Canvas API למשחקים, או HTML/CSS/JS לאפליקציות אחרות. וודא שהקוד עובד מושלם ללא שגיאות, עם עיצוב מרהיב!`
         }
       ],
     });
