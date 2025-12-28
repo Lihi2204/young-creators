@@ -84,9 +84,9 @@ const CODE_GENERATION_PROMPT = `אתה מפתח אפליקציות ומשחקי�
       gap: 5px;
     }
     .mobile-btn {
-      width: 65px;
-      height: 65px;
-      font-size: 28px;
+      width: 70px;
+      height: 70px;
+      font-size: 32px;
       border-radius: 50%;
       background: linear-gradient(145deg, #4a5568, #2d3748);
       border: 3px solid #718096;
@@ -97,13 +97,22 @@ const CODE_GENERATION_PROMPT = `אתה מפתח אפליקציות ומשחקי�
       justify-content: center;
       user-select: none;
       -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
       box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
-    .mobile-btn:active {
+    .mobile-btn:active, .mobile-btn.pressed {
       background: linear-gradient(145deg, #2d3748, #1a202c);
       transform: scale(0.95);
       box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    /* רספונסיביות */
+    @media (max-width: 600px) {
+      .game-wrapper { padding: 10px; }
+      canvas { max-width: 100%; height: auto; }
+      h1 { font-size: 22px; }
+      .score { font-size: 18px; }
+      .mobile-btn { width: 60px; height: 60px; font-size: 28px; }
     }
   </style>
 </head>
@@ -259,15 +268,27 @@ const CODE_GENERATION_PROMPT = `אתה מפתח אפליקציות ומשחקי�
       document.getElementById('mobileControls').style.display = 'flex';
     }
 
-    // כפתורי מובייל וירטואליים
+    // כפתורי מובייל וירטואליים - טיפול משופר
     const directions = {left: 'ArrowLeft', right: 'ArrowRight', up: 'ArrowUp', down: 'ArrowDown'};
     Object.entries(directions).forEach(([dir, key]) => {
       const btn = document.getElementById(dir + 'Btn');
       if (btn) {
-        btn.addEventListener('touchstart', e => { e.preventDefault(); keys[key] = true; });
-        btn.addEventListener('touchend', e => { keys[key] = false; });
-        btn.addEventListener('mousedown', e => { keys[key] = true; });
-        btn.addEventListener('mouseup', e => { keys[key] = false; });
+        // אירועי לחיצה
+        ['touchstart', 'mousedown'].forEach(eventType => {
+          btn.addEventListener(eventType, e => {
+            e.preventDefault();
+            e.stopPropagation();
+            keys[key] = true;
+            btn.classList.add('pressed');
+          }, { passive: false });
+        });
+        // אירועי שחרור
+        ['touchend', 'touchcancel', 'mouseup', 'mouseleave'].forEach(eventType => {
+          btn.addEventListener(eventType, e => {
+            keys[key] = false;
+            btn.classList.remove('pressed');
+          });
+        });
       }
     });
 
