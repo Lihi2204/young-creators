@@ -227,20 +227,20 @@ const CreatingIndicator = ({ progress }: { progress: number }) => {
 };
 
 // The generated artifact display
-const ArtifactDisplay = ({ code, isVisible, sessionId, onSessionIdUpdate }: {
+const ArtifactDisplay = ({ code, isVisible, sessionId, onSessionIdUpdate, publishedUrl, setPublishedUrl }: {
   code: string | null;
   isVisible: boolean;
   sessionId: string | null;
   onSessionIdUpdate: (id: string) => void;
+  publishedUrl: string | null;
+  setPublishedUrl: (url: string | null) => void;
 }) => {
   const [isPublishing, setIsPublishing] = useState(false);
-  const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
 
-  // Reset publishedUrl when sessionId becomes null (user clicked "start over")
+  // Reset copySuccess when sessionId becomes null (user clicked "start over")
   useEffect(() => {
     if (sessionId === null) {
-      setPublishedUrl(null);
       setCopySuccess(false);
     }
   }, [sessionId]);
@@ -454,6 +454,7 @@ export default function YoungCreators() {
   const [introPlayed, setIntroPlayed] = useState(false);
   const [creationProgress, setCreationProgress] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -643,6 +644,7 @@ export default function YoungCreators() {
       setIsCreating(true);
       setMood('creating');
       setCreationProgress(0);
+      setPublishedUrl(null); // Reset so publish button appears for updated artifact
 
       // Simulate progress while waiting for API (typically takes 30-60 seconds)
       const progressInterval = setInterval(() => {
@@ -877,6 +879,7 @@ export default function YoungCreators() {
     setMessages([]);
     setConversationHistory([]);
     setSessionId(null); // Clear sessionId so next publish creates new link
+    setPublishedUrl(null); // Clear published URL so new link is created
     setMood('idle');
     setLiveTranscript('');
     setIsCreating(false);
@@ -1017,6 +1020,8 @@ export default function YoungCreators() {
           isVisible={!!currentArtifact}
           sessionId={sessionId}
           onSessionIdUpdate={setSessionId}
+          publishedUrl={publishedUrl}
+          setPublishedUrl={setPublishedUrl}
         />
 
         {/* Reset button */}
