@@ -122,9 +122,9 @@ const CODE_GENERATION_PROMPT = `אתה מפתח אפליקציות ומשחקי�
         <button class="mobile-btn" id="upBtn">⬆️</button>
       </div>
       <div class="dpad-row">
-        <button class="mobile-btn" id="leftBtn">⬅️</button>
+        <button class="mobile-btn" id="leftBtn">➡️</button>
         <button class="mobile-btn" id="downBtn">⬇️</button>
-        <button class="mobile-btn" id="rightBtn">➡️</button>
+        <button class="mobile-btn" id="rightBtn">⬅️</button>
       </div>
     </div>
   </div>
