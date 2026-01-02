@@ -237,11 +237,13 @@ const ArtifactDisplay = ({ code, isVisible, sessionId, onSessionIdUpdate, publis
 }) => {
   const [isPublishing, setIsPublishing] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [artifactTitle, setArtifactTitle] = useState('');
 
-  // Reset copySuccess when sessionId becomes null (user clicked "start over")
+  // Reset state when sessionId becomes null (user clicked "start over")
   useEffect(() => {
     if (sessionId === null) {
       setCopySuccess(false);
+      setArtifactTitle('');
     }
   }, [sessionId]);
 
@@ -270,7 +272,7 @@ const ArtifactDisplay = ({ code, isVisible, sessionId, onSessionIdUpdate, publis
       const response = await fetch('/api/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, sessionId }),
+        body: JSON.stringify({ code, sessionId, title: artifactTitle || undefined }),
       });
 
       const data = await response.json();
@@ -326,8 +328,18 @@ const ArtifactDisplay = ({ code, isVisible, sessionId, onSessionIdUpdate, publis
           <span className="font-bold text-white text-lg">היצירה שלך!</span>
         </div>
 
-        {/* Publish button */}
+        {/* Title input and Publish button */}
         <div className="flex items-center gap-2">
+          {!publishedUrl && (
+            <input
+              type="text"
+              value={artifactTitle}
+              onChange={(e) => setArtifactTitle(e.target.value)}
+              placeholder="שם היצירה (אופציונלי)"
+              className="px-3 py-1.5 rounded-full text-sm border-0 bg-white/90 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/50 w-32 sm:w-40"
+              dir="rtl"
+            />
+          )}
           {publishedUrl ? (
             <button
               onClick={handleCopyAgain}
@@ -921,9 +933,18 @@ export default function YoungCreators() {
       <div className="relative z-10 container mx-auto px-4 py-8 max-w-2xl">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg">
-             יוצרים צעירים
-          </h1>
+          <div className="flex justify-center items-center gap-4 mb-2">
+            <h1 className="text-4xl font-bold text-white drop-shadow-lg">
+               יוצרים צעירים
+            </h1>
+            <a
+              href="/gallery"
+              className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-full font-medium transition-all flex items-center gap-2 text-sm"
+            >
+              <span>🖼️</span>
+              <span>גלריה</span>
+            </a>
+          </div>
           <p className="text-xl text-white/90">ספר לי מה אתה רוצה ליצור!</p>
         </div>
 
