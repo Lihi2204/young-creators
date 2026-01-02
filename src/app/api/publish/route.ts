@@ -72,7 +72,7 @@ function detectTags(code: string): string[] {
 
 export async function POST(request: NextRequest) {
   try {
-    const { code, sessionId, title, description } = await request.json();
+    const { code, sessionId, title } = await request.json();
 
     if (!code) {
       return NextResponse.json({ error: 'No code provided' }, { status: 400 });
@@ -85,10 +85,16 @@ export async function POST(request: NextRequest) {
     // Auto-detect tags
     const tags = detectTags(code);
 
-    // Generate description only for new artifacts (to avoid API calls on updates)
-    let finalDescription = description || '';
-    if (isNewArtifact && !finalDescription) {
+    // Handle description:
+    // - For new artifacts: generate description using AI
+    // - For updates: keep existing description from KV
+    let finalDescription = '';
+    if (isNewArtifact) {
       finalDescription = await generateDescription(code);
+    } else {
+      // Get existing artifact to preserve its description
+      const existingArtifact = await kv.get<{ description?: string }>(`artifact:${id}`);
+      finalDescription = existingArtifact?.description || '';
     }
 
     // Save artifact with metadata
