@@ -227,17 +227,31 @@ const CreatingIndicator = ({ progress }: { progress: number }) => {
 };
 
 // The generated artifact display
-const ArtifactDisplay = ({ code, isVisible, sessionId, onSessionIdUpdate, publishedUrl, setPublishedUrl }: {
+const ArtifactDisplay = ({ code, isVisible, sessionId, onSessionIdUpdate, publishedUrl, setPublishedUrl, conversationHistory }: {
   code: string | null;
   isVisible: boolean;
   sessionId: string | null;
   onSessionIdUpdate: (id: string) => void;
   publishedUrl: string | null;
   setPublishedUrl: (url: string | null) => void;
+  conversationHistory: { role: string; content: string }[];
 }) => {
   const [isPublishing, setIsPublishing] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [artifactTitle, setArtifactTitle] = useState('');
+
+  // Extract description from the first user message in conversation
+  const getDescriptionFromConversation = () => {
+    const firstUserMessage = conversationHistory.find(m => m.role === 'user');
+    if (firstUserMessage) {
+      let desc = firstUserMessage.content;
+      if (desc.length > 60) {
+        desc = desc.substring(0, 57) + '...';
+      }
+      return desc;
+    }
+    return '';
+  };
 
   // Reset state when sessionId becomes null (user clicked "start over")
   useEffect(() => {
@@ -269,10 +283,11 @@ const ArtifactDisplay = ({ code, isVisible, sessionId, onSessionIdUpdate, publis
 
     setIsPublishing(true);
     try {
+      const description = getDescriptionFromConversation();
       const response = await fetch('/api/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, sessionId, title: artifactTitle || undefined }),
+        body: JSON.stringify({ code, sessionId, title: artifactTitle || undefined, description }),
       });
 
       const data = await response.json();
@@ -1042,6 +1057,7 @@ export default function YoungCreators() {
           sessionId={sessionId}
           onSessionIdUpdate={setSessionId}
           publishedUrl={publishedUrl}
+          conversationHistory={conversationHistory}
           setPublishedUrl={setPublishedUrl}
         />
 

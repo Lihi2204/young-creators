@@ -6,6 +6,7 @@ import Link from 'next/link';
 interface GalleryItem {
   id: string;
   title: string;
+  description?: string;
   tags: string[];
   createdAt: number;
   hasCode: boolean;
@@ -135,6 +136,11 @@ export default function GalleryPage() {
                   <h3 className="font-bold text-gray-800 text-lg truncate">
                     {item.title || 'יצירה ללא שם'}
                   </h3>
+                  {item.description && (
+                    <p className="text-sm text-gray-500 truncate mt-1">
+                      {item.description}
+                    </p>
+                  )}
 
                   <div className="flex items-center justify-between mt-2">
                     <div className="flex gap-1">

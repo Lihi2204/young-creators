@@ -4,6 +4,7 @@ import { kv } from '@vercel/kv';
 interface ArtifactData {
   code: string;
   title: string;
+  description?: string;
   tags: string[];
   createdAt: number;
   id: string;
@@ -31,6 +32,7 @@ export async function GET(request: NextRequest) {
           items.push({
             code: artifact,
             title: 'יצירה ללא שם',
+            description: '',
             tags: ['יצירה'],
             createdAt: Date.now(),
             id: id as string

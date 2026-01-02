@@ -43,7 +43,7 @@ function detectTags(code: string): string[] {
 
 export async function POST(request: NextRequest) {
   try {
-    const { code, sessionId, title } = await request.json();
+    const { code, sessionId, title, description } = await request.json();
 
     if (!code) {
       return NextResponse.json({ error: 'No code provided' }, { status: 400 });
@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
     const artifactData = {
       code,
       title: title || 'יצירה ללא שם',
+      description: description || '',
       tags,
       createdAt: Date.now(),
       id
