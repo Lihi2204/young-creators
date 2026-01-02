@@ -1,5 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { kv } from '@vercel/kv';
+import Anthropic from '@anthropic-ai/sdk';
+
+const anthropic = new Anthropic();
+
+// Generate a short description of the artifact using Claude
+async function generateDescription(code: string): Promise<string> {
+  try {
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 100,
+      messages: [{
+        role: 'user',
+        content: `תסתכל על הקוד הזה ותכתוב תיאור קצר בעברית (עד 2 משפטים קצרים) שמסביר מה היצירה הזו עושה. התיאור צריך להיות ברור לילדים.
+
+קוד:
+${code.substring(0, 3000)}
+
+תיאור קצר:`
+      }]
+    });
+
+    const text = response.content[0].type === 'text' ? response.content[0].text : '';
+    // Limit to ~120 chars
+    return text.trim().substring(0, 150);
+  } catch (error) {
+    console.error('Failed to generate description:', error);
+    return '';
+  }
+}
 
 // Auto-detect tags based on code content
 function detectTags(code: string): string[] {
@@ -56,11 +85,17 @@ export async function POST(request: NextRequest) {
     // Auto-detect tags
     const tags = detectTags(code);
 
+    // Generate description only for new artifacts (to avoid API calls on updates)
+    let finalDescription = description || '';
+    if (isNewArtifact && !finalDescription) {
+      finalDescription = await generateDescription(code);
+    }
+
     // Save artifact with metadata
     const artifactData = {
       code,
       title: title || 'יצירה ללא שם',
-      description: description || '',
+      description: finalDescription,
       tags,
       createdAt: Date.now(),
       id
