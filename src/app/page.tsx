@@ -948,19 +948,17 @@ export default function YoungCreators() {
       <div className="relative z-10 container mx-auto px-4 py-8 max-w-2xl">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="flex justify-center items-center gap-4 mb-2">
-            <h1 className="text-4xl font-bold text-white drop-shadow-lg">
-               יוצרים צעירים
-            </h1>
-            <a
-              href="/gallery"
-              className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-full font-medium transition-all flex items-center gap-2 text-sm"
-            >
-              <span>🖼️</span>
-              <span>גלריה</span>
-            </a>
-          </div>
-          <p className="text-xl text-white/90">ספר לי מה אתה רוצה ליצור!</p>
+          <h1 className="text-4xl font-bold text-white drop-shadow-lg mb-2">
+            יוצרים צעירים
+          </h1>
+          <p className="text-xl text-white/90 mb-4">ספר לי מה אתה רוצה ליצור!</p>
+          <a
+            href="/gallery"
+            className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-full font-medium transition-all text-sm"
+          >
+            <span>🖼️</span>
+            <span>גלריה</span>
+          </a>
         </div>
 
         {/* Mascot */}
