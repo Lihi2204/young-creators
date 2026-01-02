@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { track } from '@vercel/analytics';
 
 // Web Speech API types
 interface SpeechRecognitionEvent extends Event {
@@ -288,6 +289,11 @@ const ArtifactDisplay = ({ code, isVisible, sessionId, onSessionIdUpdate, publis
 
       setPublishedUrl(data.url);
 
+      // Track successful publish
+      track('artifact_published', {
+        isNewArtifact: !sessionId
+      });
+
       // Auto-copy to clipboard
       await navigator.clipboard.writeText(data.url);
       setCopySuccess(true);
@@ -301,6 +307,7 @@ const ArtifactDisplay = ({ code, isVisible, sessionId, onSessionIdUpdate, publis
     } catch (error) {
       console.error('Publish error:', error);
       alert('שגיאה בפרסום היצירה');
+      track('publish_failed');
     } finally {
       setIsPublishing(false);
     }
@@ -658,6 +665,12 @@ export default function YoungCreators() {
       setCreationProgress(0);
       setPublishedUrl(null); // Reset so publish button appears for updated artifact
 
+      // Track creation attempt
+      track('creation_started', {
+        device: isMobile ? 'mobile' : 'desktop',
+        isUpdate: !!sessionId
+      });
+
       // Simulate progress while waiting for API (typically takes 30-60 seconds)
       const progressInterval = setInterval(() => {
         setCreationProgress(prev => {
@@ -695,12 +708,22 @@ export default function YoungCreators() {
       setCreationProgress(0);
       setMood('happy');
 
+      // Track successful creation
+      track('creation_completed', {
+        device: isMobile ? 'mobile' : 'desktop'
+      });
+
     } catch (error) {
       console.error('Code generation error:', error);
       setIsCreating(false);
       setMood('idle');
+
+      // Track creation failure
+      track('creation_failed', {
+        device: isMobile ? 'mobile' : 'desktop'
+      });
     }
-  }, [isMobile]);
+  }, [isMobile, sessionId]);
 
   // Process transcribed text
   const handleUserInput = useCallback(async (text: string) => {

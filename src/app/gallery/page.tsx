@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { track } from '@vercel/analytics';
 
 interface GalleryItem {
   id: string;
@@ -122,6 +123,7 @@ export default function GalleryPage() {
               <Link
                 key={item.id}
                 href={`/view/${item.id}`}
+                onClick={() => track('gallery_item_clicked', { tag: item.tags?.[0] || 'unknown' })}
                 className="group bg-white rounded-2xl shadow-xl overflow-hidden hover:scale-105 transition-transform duration-300"
               >
                 {/* Preview placeholder */}
