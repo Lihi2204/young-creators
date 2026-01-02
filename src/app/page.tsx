@@ -245,8 +245,8 @@ const ArtifactDisplay = ({ code, isVisible, sessionId, onSessionIdUpdate, publis
     const firstUserMessage = conversationHistory.find(m => m.role === 'user');
     if (firstUserMessage) {
       let desc = firstUserMessage.content;
-      if (desc.length > 60) {
-        desc = desc.substring(0, 57) + '...';
+      if (desc.length > 120) {
+        desc = desc.substring(0, 117) + '...';
       }
       return desc;
     }

@@ -137,7 +137,7 @@ export default function GalleryPage() {
                     {item.title || 'יצירה ללא שם'}
                   </h3>
                   {item.description && (
-                    <p className="text-sm text-gray-500 truncate mt-1">
+                    <p className="text-sm text-gray-500 mt-1 line-clamp-2">
                       {item.description}
                     </p>
                   )}
