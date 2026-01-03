@@ -674,7 +674,9 @@ export default function YoungCreators() {
       // Simulate progress while waiting for API (typically takes 30-60 seconds)
       const progressInterval = setInterval(() => {
         setCreationProgress(prev => {
-          // Slow down as we approach 90% (never reach 100% until done)
+          // Never exceed 99% until API returns
+          if (prev >= 99) return 99;
+          // Slow down as we approach 90%
           if (prev < 30) return prev + 3;
           if (prev < 60) return prev + 2;
           if (prev < 80) return prev + 1;
