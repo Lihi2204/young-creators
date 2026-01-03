@@ -30,6 +30,17 @@ ${code.substring(0, 3000)}
   }
 }
 
+// Generate a short title from user request
+function generateTitle(userRequest: string): string {
+  // Take first 4-5 words
+  const words = userRequest.split(' ').slice(0, 5);
+  let title = words.join(' ');
+  if (title.length > 30) {
+    title = title.substring(0, 27) + '...';
+  }
+  return title || 'יצירה חדשה';
+}
+
 // Auto-detect tags based on code content
 function detectTags(code: string): string[] {
   const tags: string[] = [];
@@ -72,7 +83,7 @@ function detectTags(code: string): string[] {
 
 export async function POST(request: NextRequest) {
   try {
-    const { code, sessionId, title } = await request.json();
+    const { code, sessionId, title, userRequest } = await request.json();
 
     if (!code) {
       return NextResponse.json({ error: 'No code provided' }, { status: 400 });
@@ -85,6 +96,27 @@ export async function POST(request: NextRequest) {
     // Auto-detect tags
     const tags = detectTags(code);
 
+    // For updates, get existing artifact to preserve title and description
+    let existingArtifact: { title?: string; description?: string } | null = null;
+    if (!isNewArtifact) {
+      existingArtifact = await kv.get<{ title?: string; description?: string }>(`artifact:${id}`);
+    }
+
+    // Handle title:
+    // - If user provided title, use it
+    // - For new artifacts without title: generate from userRequest
+    // - For updates without title: keep existing title
+    let finalTitle = title;
+    if (!finalTitle) {
+      if (isNewArtifact && userRequest) {
+        finalTitle = generateTitle(userRequest);
+      } else if (!isNewArtifact && existingArtifact?.title) {
+        finalTitle = existingArtifact.title;
+      } else {
+        finalTitle = 'יצירה ללא שם';
+      }
+    }
+
     // Handle description:
     // - For new artifacts: generate description using AI
     // - For updates: keep existing description from KV
@@ -92,15 +124,13 @@ export async function POST(request: NextRequest) {
     if (isNewArtifact) {
       finalDescription = await generateDescription(code);
     } else {
-      // Get existing artifact to preserve its description
-      const existingArtifact = await kv.get<{ description?: string }>(`artifact:${id}`);
       finalDescription = existingArtifact?.description || '';
     }
 
     // Save artifact with metadata
     const artifactData = {
       code,
-      title: title || 'יצירה ללא שם',
+      title: finalTitle,
       description: finalDescription,
       tags,
       createdAt: Date.now(),

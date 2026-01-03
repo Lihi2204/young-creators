@@ -228,13 +228,14 @@ const CreatingIndicator = ({ progress }: { progress: number }) => {
 };
 
 // The generated artifact display
-const ArtifactDisplay = ({ code, isVisible, sessionId, onSessionIdUpdate, publishedUrl, setPublishedUrl }: {
+const ArtifactDisplay = ({ code, isVisible, sessionId, onSessionIdUpdate, publishedUrl, setPublishedUrl, firstUserMessage }: {
   code: string | null;
   isVisible: boolean;
   sessionId: string | null;
   onSessionIdUpdate: (id: string) => void;
   publishedUrl: string | null;
   setPublishedUrl: (url: string | null) => void;
+  firstUserMessage: string;
 }) => {
   const [isPublishing, setIsPublishing] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -273,7 +274,12 @@ const ArtifactDisplay = ({ code, isVisible, sessionId, onSessionIdUpdate, publis
       const response = await fetch('/api/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, sessionId, title: artifactTitle || undefined }),
+        body: JSON.stringify({
+          code,
+          sessionId,
+          title: artifactTitle || undefined,
+          userRequest: !artifactTitle ? firstUserMessage : undefined
+        }),
       });
 
       const data = await response.json();
@@ -1066,6 +1072,7 @@ export default function YoungCreators() {
           onSessionIdUpdate={setSessionId}
           publishedUrl={publishedUrl}
           setPublishedUrl={setPublishedUrl}
+          firstUserMessage={conversationHistory.find(m => m.role === 'user')?.content || ''}
         />
 
         {/* Reset button */}
