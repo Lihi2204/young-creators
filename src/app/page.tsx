@@ -422,11 +422,11 @@ const ArtifactDisplay = ({ code, isVisible, sessionId, onSessionIdUpdate, publis
         </div>
       )}
 
-      <div className="p-4">
+      <div className="p-2 sm:p-4">
         <iframe
           srcDoc={code}
           className="w-full border-0 rounded-xl"
-          style={{ height: '70vh', minHeight: '500px' }}
+          style={{ height: '80vh', minHeight: '400px', maxHeight: '800px' }}
           sandbox="allow-scripts"
           title="Created artifact"
         />
